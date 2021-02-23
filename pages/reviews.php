@@ -94,10 +94,9 @@ $reviews = $db->get_some('reviews', $show_max_num, $offset);
 
 .pag-nums div{
   width:25px;
-  height:20px;
+  height:25px;
   border-radius: 50%;
   display: inline;
-  padding-top: 5px;
   cursor: pointer;
   
 }
