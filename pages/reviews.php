@@ -18,7 +18,7 @@ if(isset($_GET['p']) && intval($_GET['p']) ){
 
 $page = intval($_GET['p']);
 
-//define offset related to page number 
+//define offset depend on page number 
 $offset = $page * $show_max_num - $show_max_num;
 
 
