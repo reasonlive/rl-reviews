@@ -2,9 +2,9 @@
 <?php
 
 $HOST = 'localhost';
-$LOGIN = 'apc';
-$PASS = 'reasonlive';
-$DBNAME = 'app';
+$LOGIN = 'your_login';
+$PASS = 'your_pass';
+$DBNAME = 'your_dbname';
 
 //add administrator into the database
 $ADMIN = 'helloworld';
