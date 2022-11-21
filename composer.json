@@ -1,0 +1,18 @@
+{
+    "name": "rl/reviews",
+    "description": "website with reviews arranged by catеgories",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Reviews\\": "src/Classes"
+        }
+    },
+    "authors": [
+        {
+            "name": "Reason Live",
+            "email": "digitmind@protonmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
