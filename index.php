@@ -1,22 +1,20 @@
-
 <?php
+
+require __DIR__ . '/vendor/autoload.php';
+
 ini_set('display_errors', 1);       
-ini_set('error_reporting', E_ALL);  
-                        
+ini_set('error_reporting', E_ALL);
 
+//require "./config.php";
+//require "./db/index.php";
+//require "./db/initial_queries.php";
 
-require "./config.php";
-require "./db/index.php";
-require "./db/initial_queries.php";
-
-$db = new Database($HOST,$LOGIN,$PASS,$DBNAME);
+//$db = new Database($HOST,$LOGIN,$PASS,$DBNAME);
 
 //initiates db tables
-$db->execute($reviews_table);
-$db->execute($answers_table);
-$db->execute($admins_table);
-$db->execute($admins_row);
+//$db->execute($reviews_table);
+//$db->execute($answers_table);
+//$db->execute($admins_table);
+//$db->execute($admins_row);
 
-include('./pages/_main.php');
-
-?>
+//include('./pages/_main.php');

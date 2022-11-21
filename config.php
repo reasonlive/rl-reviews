@@ -2,9 +2,9 @@
 <?php
 
 $HOST = 'localhost';
-$LOGIN = 'your_login';
-$PASS = 'your_pass';
-$DBNAME = 'your_dbname';
+$LOGIN = 'root';
+$PASS = 'mitoteam';
+$DBNAME = 'reviews';
 
 //add administrator into the database
 $ADMIN = 'helloworld';
