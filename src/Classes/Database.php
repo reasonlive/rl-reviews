@@ -22,7 +22,7 @@ class Database
   /**
    * @var string|null condition for WHERE clause
    */
-  private ?string $where_condition = null;
+  private ?string $whereCondition = null;
 
   /**
    * @var array Params as values for PDO substitution
@@ -68,7 +68,8 @@ class Database
 
   public function select(string $tablename, array $data = array())
   {
-  	$this->checkCondition(!strlen($this->query));
+    $this->isInProcess = true;
+  	$this->checkQuery(!strlen($this->query));
 
   	$this->query = 'SELECT ';
 
@@ -91,12 +92,13 @@ class Database
 
   	$this->query .= " FROM $tablename";
   	
-  	return $this;  
+  	return $this;
   }
 
   public function insert(string $tablename, array $data)
   {
-  	$this->checkCondition(!strlen($this->query));
+    $this->isInProcess = true;
+  	$this->checkQuery(!strlen($this->query));
 
   	$this->query = "INSERT INTO $tablename";
   	$keys = $vals = '';
@@ -122,32 +124,49 @@ class Database
   	return $this;
   }
 
-  public function update()
+  public function update(string $tablename, array $data)
   {
-  	$this->checkCondition(!strlen($this->query));
+    $this->isInProcess = true;
+  	$this->checkQuery(!strlen($this->query));
+
+  	$this->query = "UPDATE $tablename SET";
+
+  	foreach(array_keys($data) as $key)
+  	{
+  		$this->query .= " $key = ? ";
+  	}
+
+  	$this->params = array_values($data);
+
+  	return $this;
   }
 
-  public function delete()
+  public function delete(string $tablename)
   {
-  	$this->checkCondition(!strlen($this->query));
+    $this->isInProcess = true;
+  	$this->checkQuery(!strlen($this->query));
+
+  	$this->query = "DELETE FROM $tablename";
+
+  	return $this;
   }
 
   public function or()
   {
-  	$this->where_condition = 'OR';
+  	$this->whereCondition = 'OR';
   	return $this;
   }
 
   public function and()
   {
-  	$this->where_condition = 'AND';
+  	$this->whereCondition = 'AND';
   	return $this;
   }
 
   public function where(string $field, mixed $value)
   {
   	if(str_contains($this->query, 'WHERE')){
-  	  $this->query .= " ($this->where_condition ?? 'AND') $field = ?";
+  	  $this->query .= " ($this->whereCondition ?? 'AND') $field = ?";
   	}
   	else{
   	  $this->query .= " WHERE $field = ?";
@@ -160,10 +179,12 @@ class Database
 
   public function query(bool $strict = false)
   {
-  	$this->checkCondition(strlen($this->query));
+  	$this->checkQuery(strlen($this->query));
 
   	$stmt = $this->connector->prepare($this->query);
+
   	$this->query = '';
+    $this->isInProcess = false;
 
   	if(!$strict){
 	  	$stmt->execute($this->params);
@@ -176,9 +197,9 @@ class Database
   	return $r;
   }
 
-  private function checkCondition(bool $condition, ?string $message = null)
+  private function checkQuery(bool $condition, ?string $message = null)
   {
-  	if(!$condition){
+  	if(!$condition || !$this->isInProcess){
   	  throw new Exception($message ?? '[SQL QUERY ERROR]');
   	}
 
@@ -189,5 +210,12 @@ class Database
 
   public function setFetchMode(int $mode){
   	$this->fetch_mode = $mode;
+  }
+
+  private static bool $isInProcess = false;
+
+  public static function inProcess(): bool
+  {
+    return self::isInProcess;
   }
 }
