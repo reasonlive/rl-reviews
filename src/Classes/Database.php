@@ -1,6 +1,6 @@
 <?php
 
-namespace Reviews;
+namespace Reviews\Classes;
 
 class Database
 {

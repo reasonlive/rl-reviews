@@ -2,80 +2,103 @@
 
 namespace Reviews\Models;
 
-use Reviews\Database;
+use Reviews\Classes\Database;
 
 abstract class Model
 {
 	private const ID = 'id';
-	private const TABLENAME = null;
+	protected const TABLENAME = null;
 
-	private Database $db = null;
-	private array $fieldsData = array();
+	private static ?Database $db = null;
 
-	private id = null;
+	private array $inputFields = array();
+	private array $outputFields;
 
-	private bool isNew = true;
+	private ?int $_id = null;
+
+	private bool $isNew = true;
 
 	public function id()
 	{
-		return $this->id;
+		return $this->_id;
+	}
+
+	private function _setId(int $id)
+	{
+		$this->_id = $id; 
 	}
 
 	public function __construct(array $data = array())
 	{
-		$this->db = Database::connect();
-
+		if(!static::$db)
+		{
+			static::$db = Database::connect();	
+		}
+		
 		if(count($data))
 		{
-			$this->fieldsData = $data;
+			$this->inputFields = $data;
 		}
+	}
+
+	private static function getInstance(int $id)
+	{
+		$model = new static();
+		$model->isNew = false;
+		$model->_id = $id;
+		
+		return $model;
 	}
 
 	public function set(string $field, string $value)
 	{
-		$this->fieldsData[$field] = $value;
+		$this->inputFields[$field] = $value;
 	}
 
 	public function get(string $field): array
 	{
-		return $this->db->select(self::TABLENAME, $field)
+		return static::$db->select(static::TABLENAME, $field)
 		->where(self::ID, $this->id())
 		->query();
 	}
 
 	public static function load(int $id)
 	{
-		if(!$this->db)
-		{
-			$this->db = Database::connect();
-		}
+		self::$db = Database::connect();
 
-		
+		$loaded_id = self::$db->select(static::TABLENAME, self::ID)
+		->where(self::ID, $id)
+		->query();
+
+		if($loaded_id)
+		{
+			return static::getInstance($loaded_id);
+		}	
 	}
 
 	public function save()
 	{
 		if($this->isNew)
 		{
-			$this->db->insert(self::TABLENAME, $this->fieldsData)->query();
+			static::$db->insert(static::TABLENAME, $this->inputFields)->query();
 			$this->isNew = false;
 		}
 		else
 		{
-			$this->db->update(self::TABLENAME, $this->fieldsData)->query();
+			static::$db->update(static::TABLENAME, $this->inputFields)->query();
 		}
 	}
 
 	public function remove()
 	{
-		$this->db->delete(self::TABLENAME)
+		static::$db->delete(static::TABLENAME)
 		->where(self::ID, $this->id())
 		->query();
 	}
 
 	private function fields()
 	{
-		return $this->select(self::TABLENAME)
+		return static::$db->select(static::TABLENAME)
 		->where(self::ID, $this->id())
 		->query();
 	}
