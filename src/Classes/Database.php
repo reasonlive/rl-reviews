@@ -75,10 +75,8 @@ class Database
 
   public function select(string $tablename, array $data = array())
   {
-    $this->isInProcess = true;
-    $this->select = true;
-
-  	$this->check(!strlen($this->query));
+    $this->check(!self::inProcess());
+    $this->states['select'] = true;
 
   	$this->query = 'SELECT ';
 
@@ -106,10 +104,8 @@ class Database
 
   public function insert(string $tablename, array $data)
   {
-    $this->isInProcess = true;
-    $this->insert = true;
-
-  	$this->check(!strlen($this->query));
+    $this->check(!strlen(self::inProcess()));
+    $this->states['insert'] = true;
 
   	$this->query = "INSERT INTO $tablename";
   	$keys = $vals = '';
@@ -137,8 +133,8 @@ class Database
 
   public function update(string $tablename, array $data)
   {
-    $this->isInProcess = true;
-  	$this->check(!strlen($this->query));
+  	$this->check(!self::inProcess());
+  	$this->states['update'] = true;
 
   	$this->query = "UPDATE $tablename SET";
 
@@ -154,8 +150,8 @@ class Database
 
   public function delete(string $tablename)
   {
-    $this->isInProcess = true;
-  	$this->check(!strlen($this->query));
+  	$this->check(!self::inProcess());
+  	$this->states['delete'] = true;
 
   	$this->query = "DELETE FROM $tablename";
 
@@ -176,6 +172,8 @@ class Database
 
   public function where(string $field, mixed $value)
   {
+  	$this->check(self::inProcess());
+
   	if(str_contains($this->query, 'WHERE')){
   	  $this->query .= " ($this->whereCondition ?? 'AND') $field = ?";
   	}
@@ -190,14 +188,10 @@ class Database
 
   public function query(bool $strict = false)
   {
-  	$this->check(strlen($this->query));
-
-    //todo: make method that checks operation states
+    $this->check(self::inProcess());
 
   	$stmt = $this->connector->prepare($this->query);
-
   	$this->query = '';
-    $this->isInProcess = false;
 
   	if(!$strict){
       $this->check($stmt->execute($this->params), '[SQL EXECUTION ERROR]');
@@ -213,17 +207,16 @@ class Database
       $r = $stmt->rowCount();
     }
   	
-
   	$stmt = null;
-    $this->isInProcess = false;
+  	$this->resetState();
   	
   	return $r;
   }
 
   private function check(bool $condition, ?string $message = null)
   {
-  	if(!$condition || !$this->isInProcess){
-  	  throw new Exception($message ?? '[SQL QUERY ERROR]');
+  	if(!$condition){
+  	  throw new Exception($message ?? '[SQL STATE ERROR]');
   	}
 
   	return true;
@@ -235,10 +228,16 @@ class Database
   	$this->fetch_mode = $mode;
   }
 
-  private static bool $isInProcess = false;
-
   public static function inProcess(): bool
   {
-    return self::isInProcess;
+    return in_array(true, array_values($this->states));
+  }
+
+  public function resetState()
+  {
+  	foreach($this->states as $in_process)
+  	{
+  		$in_process = false;
+  	}
   }
 }
