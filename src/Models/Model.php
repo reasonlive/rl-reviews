@@ -80,18 +80,18 @@ abstract class Model
 	{
 		if($this->isNew)
 		{
-			static::$db->insert(static::TABLENAME, $this->inputFields)->query();
 			$this->isNew = false;
+			return static::$db->insert(static::TABLENAME, $this->inputFields)->query();
 		}
 		else
 		{
-			static::$db->update(static::TABLENAME, $this->inputFields)->query();
+			return static::$db->update(static::TABLENAME, $this->inputFields)->query();
 		}
 	}
 
 	public function remove()
 	{
-		static::$db->delete(static::TABLENAME)
+		return static::$db->delete(static::TABLENAME)
 		->where(self::ID, $this->id())
 		->query();
 	}

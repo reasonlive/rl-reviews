@@ -7,7 +7,7 @@ class Database
 	/**
 	 * @var Object Database instance
 	 */
-  private static $db = null;
+  protected static $db = null;
 
   /**
    * @var PDO instance
@@ -17,7 +17,7 @@ class Database
   /**
    * @var query string to database
    */
-  private string $query = '';
+  protected string $query = '';
 
   /**
    * @var string|null condition for WHERE clause
@@ -29,14 +29,14 @@ class Database
    */
   private array $params = array();
 
-  private array $states = array(
+  private static array $states = array(
     'insert' => false,
     'select' => false,
     'update' => false,
     'delete' => false,
   );
 
-  protected const settings = array(
+  private const settings = array(
   	'dbname'   => 'reviews',
   	'host'     => '127.0.0.1',
   	'username' => 'root',
@@ -76,7 +76,7 @@ class Database
   public function select(string $tablename, array $data = array())
   {
     $this->check(!self::inProcess());
-    $this->states['select'] = true;
+    self::$states['select'] = true;
 
   	$this->query = 'SELECT ';
 
@@ -105,7 +105,7 @@ class Database
   public function insert(string $tablename, array $data)
   {
     $this->check(!strlen(self::inProcess()));
-    $this->states['insert'] = true;
+    self::$states['insert'] = true;
 
   	$this->query = "INSERT INTO $tablename";
   	$keys = $vals = '';
@@ -134,7 +134,7 @@ class Database
   public function update(string $tablename, array $data)
   {
   	$this->check(!self::inProcess());
-  	$this->states['update'] = true;
+  	self::$states['update'] = true;
 
   	$this->query = "UPDATE $tablename SET";
 
@@ -151,7 +151,7 @@ class Database
   public function delete(string $tablename)
   {
   	$this->check(!self::inProcess());
-  	$this->states['delete'] = true;
+  	self::$states['delete'] = true;
 
   	$this->query = "DELETE FROM $tablename";
 
@@ -198,7 +198,7 @@ class Database
 	  	$this->params = array();	
   	}
 
-    if($this->states['select'])
+    if(self::$states['select'])
     {
       $r = $stmt->fetchAll($this->fetch_mode);  
     }
@@ -216,7 +216,7 @@ class Database
   private function check(bool $condition, ?string $message = null)
   {
   	if(!$condition){
-  	  throw new Exception($message ?? '[SQL STATE ERROR]');
+  	  throw new \Exception($message ?? '[SQL STATE ERROR]');
   	}
 
   	return true;
@@ -230,12 +230,12 @@ class Database
 
   public static function inProcess(): bool
   {
-    return in_array(true, array_values($this->states));
+    return in_array(true, array_values(self::$states));
   }
 
-  public function resetState()
+  private function resetState()
   {
-  	foreach($this->states as $in_process)
+  	foreach(self::$states as $in_process)
   	{
   		$in_process = false;
   	}
