@@ -29,6 +29,13 @@ class Database
    */
   private array $params = array();
 
+  private array $states = array(
+    'insert' => false,
+    'select' => false,
+    'update' => false,
+    'delete' => false,
+  );
+
   protected const settings = array(
   	'dbname'   => 'reviews',
   	'host'     => '127.0.0.1',
@@ -69,7 +76,9 @@ class Database
   public function select(string $tablename, array $data = array())
   {
     $this->isInProcess = true;
-  	$this->checkQuery(!strlen($this->query));
+    $this->select = true;
+
+  	$this->check(!strlen($this->query));
 
   	$this->query = 'SELECT ';
 
@@ -98,7 +107,9 @@ class Database
   public function insert(string $tablename, array $data)
   {
     $this->isInProcess = true;
-  	$this->checkQuery(!strlen($this->query));
+    $this->insert = true;
+
+  	$this->check(!strlen($this->query));
 
   	$this->query = "INSERT INTO $tablename";
   	$keys = $vals = '';
@@ -127,7 +138,7 @@ class Database
   public function update(string $tablename, array $data)
   {
     $this->isInProcess = true;
-  	$this->checkQuery(!strlen($this->query));
+  	$this->check(!strlen($this->query));
 
   	$this->query = "UPDATE $tablename SET";
 
@@ -144,7 +155,7 @@ class Database
   public function delete(string $tablename)
   {
     $this->isInProcess = true;
-  	$this->checkQuery(!strlen($this->query));
+  	$this->check(!strlen($this->query));
 
   	$this->query = "DELETE FROM $tablename";
 
@@ -179,7 +190,9 @@ class Database
 
   public function query(bool $strict = false)
   {
-  	$this->checkQuery(strlen($this->query));
+  	$this->check(strlen($this->query));
+
+    //todo: make method that checks operation states
 
   	$stmt = $this->connector->prepare($this->query);
 
@@ -187,23 +200,33 @@ class Database
     $this->isInProcess = false;
 
   	if(!$strict){
-	  	$stmt->execute($this->params);
+      $this->check($stmt->execute($this->params), '[SQL EXECUTION ERROR]');
 	  	$this->params = array();	
   	}
 
-  	$r = $stmt->fetchAll($this->fetch_mode);
+    if($this->states['select'])
+    {
+      $r = $stmt->fetchAll($this->fetch_mode);  
+    }
+    else
+    {
+      $r = $stmt->rowCount();
+    }
+  	
+
   	$stmt = null;
+    $this->isInProcess = false;
   	
   	return $r;
   }
 
-  private function checkQuery(bool $condition, ?string $message = null)
+  private function check(bool $condition, ?string $message = null)
   {
   	if(!$condition || !$this->isInProcess){
   	  throw new Exception($message ?? '[SQL QUERY ERROR]');
   	}
 
-  	return null;
+  	return true;
   }
 
   private $fetch_mode = \PDO::FETCH_ASSOC;
