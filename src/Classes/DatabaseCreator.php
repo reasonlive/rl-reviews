@@ -2,60 +2,55 @@
 
 namespace Reviews\Classes;
 
-use Reviews\Classes\Database;
-
-DatabaseCreator extends Database{
+DatabaseCreator extends Database {
 	
-	public function create(string $tablename, array $data = array())
-  {
-  	$this->query = "CREATE TABLE IF NOT EXISTS `$tablename`";
+	public function create(string $tablename, array $data = array()) {
+		$this->query = "CREATE TABLE IF NOT EXISTS $tablename";
 
-  	if(count($data) && !array_is_list($data))
-  	{
-  		$this->query .= '( ';
+		if (count($data) && !array_is_list($data)) {
+			$this->query .= '( ';
 
-  		foreach($data as $field => $datatype)
-  		{
-  			$this->query .= "$field $datatype ,"
-  		}
-  	}
-  }
+			$first = true;
+			foreach ($data as $field => $datatype) {
+				if (!$first) {
+					$this->query .= ', ';
+				}
+				else {
+					$first = false;
+				}
 
-  public function set(string $field, string $datatype)
-  {
+				$this->query .= "$field $datatype";
+			}
+		}
+	}
 
-  }
+	public function set(string $field, string $datatype) {
 
-  public function setPrimaryKey(string $field)
-  {
+	}
 
-  }
+	public function setPrimaryKey(string $field) {
+		$this->query .= ", PRIMARY KEY ($field)";
+		return $this;
+	}
 
-  public function setAutoIncrement(string $field, int $default_value = 1)
-  {
+	public function setAutoIncrement(string $field, int $default_value = 1) {
 
-  }
+	}
 
-  public function setUniqueKey(string $field)
-  {
+	public function setUniqueKey(string $field) {
 
-  }
+	}
 
-  public function setForeignKey(string $field, string $ref_tablename)
-  {
+	public function setForeignKey(string $field, string $ref_tablename, string $ref_field) {
+		$this->query .= ", FOREIGN KEY ($field) REFERENCES $ref_tablename ($ref_field)";
+		return $this;
+	}
 
-  }
+	public function setCharset(string $value) {
 
-  public function setCharset(string $value)
-  {
+	}
 
-  }
+	public function setCollate(string $value) {
 
-  public function setCollate(string $value)
-  {
-
-  }
-
-
-
+	}
 }
