@@ -2,67 +2,91 @@
 
 namespace Reviews\Classes;
 
-class Database
-{
+use \PDO;
+
+class Database {
 	/**
-	 * @var Object Database instance
+	 * @var Database Instance
 	 */
-  protected static $db = null;
+  private static Database|null $db = null;
 
   /**
    * @var PDO instance
    */
-  private $connector;
+  protected static PDO $connector;
 
   /**
-   * @var query string to database
+   * @var string  Request query to database
    */
   protected string $query = '';
 
   /**
-   * @var string|null condition for WHERE clause
+   * @var string|null Condition for WHERE clause
    */
-  private ?string $whereCondition = null;
+  private string|null $whereCondition = null;
 
   /**
-   * @var array Params as values for PDO substitution
+   * @var array Params as values for table fields
    */
   private array $params = array();
 
-  private static array $states = array(
+  /**
+   * @var array<string, bool> States of database query procedure 
+   */
+  protected static array $states = array(
     'insert' => false,
     'select' => false,
     'update' => false,
     'delete' => false,
+    'create' => false,
+    'alter'  => false,
+    'drop'   => false,
   );
 
-  private const settings = array(
-  	'dbname'   => 'reviews',
-  	'host'     => '127.0.0.1',
-  	'username' => 'root',
-  	'password' => 'mitoteam'
-  );
+  /**
+   * @var array<string, string> DB connection settings 
+   */
+  private static array $settings = array();
 
-  private function __construct(){}
+  /**
+   * Set connection settings and check if there is necessary fields 
+   * @param array<string, string> settings
+   */
+  public static function setConnectionSettings(array $settings): void {
+  	if (
+  		!array_key_exists('dbname', $settings)
+  		|| !array_key_exists('host', $settings)
+  		|| !array_key_exists('username', $settings)
+  		|| !array_key_exists('password', $settings)
+  	) {
+  		throw new \Exception('Incorrect database connection settings');
+  	} else {
+  		self::$settings = $settings;
+  	}
+  }
 
-  private static function getInstance()
-  {
-  	 if(self::$db === null){
+  private function __construct() {}
+
+  /**
+   * @return Database instance
+   */
+  private static function getInstance(): self {
+  	 if (self::$db === null) {
   	 	self::$db = new self();
   	 }
 
   	 return self::$db;
   }
 
-  public static function connect()
-  {
-		$db = self::getInstance();
-
+  /**
+   * @return Database instance after connection 
+   */
+  public static function connect(): self {
 		try{
-		  	$db->connector = new \PDO(
-		  		"mysql:dbname=" . self::settings['dbname'] . ";host=" . self::settings['host'],
-		  		self::settings['username'],
-		  		self::settings['password']
+		  	static::$connector = new PDO(
+		  		"mysql:dbname=" . self::$settings['dbname'] . ";host=" . self::$settings['host'],
+		  		self::$settings['username'],
+		  		self::$settings['password']
 		  	);
 		}
 		catch(\PDOException $e){
@@ -70,11 +94,25 @@ class Database
 			exit('[PDO CONNECTION ERROR]');
 		}
 
-		return $db;
+		return self::getInstance();
   }
 
-  public function select(string $tablename, array $data = array())
-  {
+  /**
+   * Remove all tables in database 
+   */
+  public static function truncate(): void {
+  	self::connect();
+  	self::$connector->exec("DROP DATABASE " . self::$settings['dbname']);
+  	self::$connector->exec("CREATE DATABASE " . self::$settings['dbname']);
+  }
+
+  /**
+   * Select rows from a table
+   * @param string $tablename Table
+   * @param string[] $data Field names to be taken
+   * @return Database
+   */
+  public function select(string $tablename, array $data = array()): self {
     $this->check(!self::inProcess());
     self::$states['select'] = true;
 
@@ -102,8 +140,13 @@ class Database
   	return $this;
   }
 
-  public function insert(string $tablename, array $data)
-  {
+  /**
+   * Insert rows into a table
+   * @param string $tablename Table
+   * @param array<string, string> $data Fields and values
+   * @return Database
+   */
+  public function insert(string $tablename, array $data): self {
     $this->check(!strlen(self::inProcess()));
     self::$states['insert'] = true;
 
@@ -131,8 +174,13 @@ class Database
   	return $this;
   }
 
-  public function update(string $tablename, array $data)
-  {
+  /**
+   * Update rows in a table
+   * @param string $tablename Table
+   * @param array<string, string> $data Fields and values
+   * @return Database
+   */
+  public function update(string $tablename, array $data): self {
   	$this->check(!self::inProcess());
   	self::$states['update'] = true;
 
@@ -148,8 +196,12 @@ class Database
   	return $this;
   }
 
-  public function delete(string $tablename)
-  {
+  /**
+   * Delete one row in a table
+   * @param string $tablename Table
+   * @return Database
+   */
+  public function delete(string $tablename): self {
   	$this->check(!self::inProcess());
   	self::$states['delete'] = true;
 
@@ -158,20 +210,31 @@ class Database
   	return $this;
   }
 
-  public function or()
-  {
+  /**
+   * Sets OR condition in a query
+   * @return Database 
+   */
+  public function or(): self {
   	$this->whereCondition = 'OR';
   	return $this;
   }
 
-  public function and()
-  {
+  /**
+   * Sets AND condition in a query
+   * @return Database 
+   */
+  public function and(): self {
   	$this->whereCondition = 'AND';
   	return $this;
   }
 
-  public function where(string $field, mixed $value)
-  {
+  /**
+   * Sets WHERE condition in a query
+   * @param string $field Field name
+   * @param mixed $value Field value
+   * @return Database 
+   */
+  public function where(string $field, mixed $value): self {
   	$this->check(self::inProcess());
 
   	if(str_contains($this->query, 'WHERE')){
@@ -186,11 +249,25 @@ class Database
   	return $this;
   }
 
-  public function query(bool $strict = false)
-  {
+  /**
+   * Request to database with prepared query
+   * @param bool $strict If it false, params will be passed as is, without PDO binding
+   * @return array<string, int|string>|int  Result from database
+   */
+  public function query(bool $strict = false): array|int {
     $this->check(self::inProcess());
 
-  	$stmt = $this->connector->prepare($this->query);
+    if (self::$states['create'] || self::$states['alter'] || self::$states['drop']) {
+    	$r = static::$connector->exec($this->query);
+    	
+    	$this->check($r !== false, '[SQL EXECUTION ERROR]');
+    	$this->query = '';
+    	$this->resetState();
+
+    	return $r;
+    }
+
+  	$stmt = static::$connector->prepare($this->query);
   	$this->query = '';
 
   	if(!$strict){
@@ -213,28 +290,43 @@ class Database
   	return $r;
   }
 
-  private function check(bool $condition, ?string $message = null)
-  {
-  	if(!$condition){
+  /**
+   * Check if condition is true, throw Exception otherwise
+   * @param bool $condition Any expression
+   * @param string|null $message Exception message
+   * @return bool True if condition is true 
+   */
+  private function check(bool $condition, ?string $message = null): bool {
+  	if (!$condition) {
   	  throw new \Exception($message ?? '[SQL STATE ERROR]');
   	}
 
   	return true;
   }
 
-  private $fetch_mode = \PDO::FETCH_ASSOC;
+  /** @var int Mode for PDO query result */
+  private int $fetch_mode = PDO::FETCH_ASSOC;
 
-  public function setFetchMode(int $mode){
+  /**
+   * Sets mode setting for PDO query result
+   * @param int $mode  
+   */
+  public function setFetchMode(int $mode): void {
   	$this->fetch_mode = $mode;
   }
 
-  public static function inProcess(): bool
-  {
+  /**
+   * Check Database procedure state
+   * @return bool true if Database is in process
+   */
+  public static function inProcess(): bool {
     return in_array(true, array_values(self::$states));
   }
 
-  private function resetState()
-  {
+  /**
+   * Reset Database state
+   */
+  private function resetState(): void {
   	foreach(self::$states as $in_process)
   	{
   		$in_process = false;
