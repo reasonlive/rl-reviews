@@ -44,7 +44,8 @@ class Database {
   );
 
   /**
-   * @var array<string, string> DB connection settings 
+   * DB connection settings
+   * @var array<string, string>
    */
   private static array $settings = array();
 
@@ -82,18 +83,20 @@ class Database {
    * @return Database instance after connection 
    */
   public static function connect(): self {
-		try{
-		  	static::$connector = new PDO(
-		  		"mysql:dbname=" . self::$settings['dbname'] . ";host=" . self::$settings['host'],
-		  		self::$settings['username'],
-		  		self::$settings['password']
-		  	);
-		}
-		catch(\PDOException $e){
-			error_log($e->getMessage());
-			exit('[PDO CONNECTION ERROR]');
-		}
-
+    if (!static::$connector) {
+      try {
+        static::$connector = new PDO(
+          "mysql:dbname=" . self::$settings['dbname'] . ";host=" . self::$settings['host'],
+          self::$settings['username'],
+          self::$settings['password']
+        );
+      }
+      catch (\PDOException $e) {
+        error_log($e->getMessage());
+        exit('[PDO CONNECTION ERROR]');
+      }
+    }
+		
 		return self::getInstance();
   }
 

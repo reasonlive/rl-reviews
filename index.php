@@ -18,12 +18,17 @@ $connection_settings = array(
   'password' => 'mitoteam',
 );
 
-Database::setConnectionSettings($connection_settings);
+//$loader = new \Twig\Loader\FilesystemLoader('/templates');
+//$twig = new \Twig\Environment($loader);
 
-DatabaseTableConstructor::create(User::class);
-Database::truncate();
+//echo $twig->render('main.html', ['title' => 'my first sheet seat']);
 
-DatabaseTableConstructor::create(Admin::class);
+//Database::setConnectionSettings($connection_settings);
+
+//DatabaseTableConstructor::create(User::class);
+//Database::truncate();
+
+//DatabaseTableConstructor::create(Admin::class);
 
 
 //include('./pages/_main.php');

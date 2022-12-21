@@ -6,24 +6,17 @@ use Reviews\Classes\Database;
 
 abstract class Model
 {
-	protected const ID = 'id';
-	protected static string $tablename;
+	protected static DataMap $data;
 
-	private static Database|null $db = null;
+	private static Database $db;
 
-	private static array $fields_map = array(
-		self::ID => array(
-			'datatype' => 'int',
-			'default'  => 'NOT NULL',
-			'option'   => 'AUTO_INCREMENT'
-		)
-	);
+	private ?int $_id;
 
-	private array $input_fields = array();
+	private bool $isNew;
 
-	private ?int $_id = null;
-
-	private bool $isNew = true;
+	public static function getDataMap() {
+		return static::$data;
+	}
 
 	public function id()
 	{
