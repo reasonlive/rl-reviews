@@ -1,1 +1,4 @@
+.idea
+.phpintel
 /vendor/
+composer.lock
