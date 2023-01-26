@@ -2,10 +2,13 @@
 
 namespace Reviews\Classes\Data;
 
+/**
+ * Data map for User model
+ */
 class UserDataMap extends DataMap {
 
 	public function __construct() {
-		$this->setName('users')
+		$this->setTableName('users')
 		->defineField('firstname', 'varchar(100)')
 		->defineField('lastname', 'varchar(100)')
 		->defineField('email', 'varchar(100)')

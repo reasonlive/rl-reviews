@@ -1,13 +1,12 @@
 <?php
 
-namespace Reviews\Models\Users;
+namespace Reviews\Models;
 use Reviews\Classes\Data\UserDataMap;
 
 class User extends Model {
 
-	protected static DataMap $data = new UserDataMap();
-	
 	public function __construct() {
-	
+		parent::__construct();
+		$this->data = new UserDataMap();
 	}
 }

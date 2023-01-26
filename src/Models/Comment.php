@@ -1,12 +1,12 @@
 <?php
 
 namespace Reviews\Models;
+use Reviews\Classes\Data\CommentDataMap;
 
 class Comment extends Model {
 
-	protected static string $tablename = 'comments';
-	protected static array $fields_map = array(
-		'message' => [],
-		'review'  => []
-	);
+	public function __construct() {
+		parent::__construct();
+		$this->data = new CommentDataMap();
+	}
 }

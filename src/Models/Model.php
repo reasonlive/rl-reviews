@@ -3,69 +3,81 @@
 namespace Reviews\Models;
 
 use Reviews\Classes\Database;
+use Reviews\Classes\Data\DataMap;
 
+/**
+ * Base class for App Models
+ */
 abstract class Model
 {
-	protected static DataMap $data;
+	/**
+	 * Data for table structure
+	 * !!! must be initiated in constructor !!!
+	 * @var DataMap
+	 */
+	protected DataMap $data;
 
 	private static Database $db;
+
+	private array $input_fields;
 
 	private ?int $_id;
 
 	private bool $isNew;
 
-	public static function getDataMap() {
-		return static::$data;
-	}
-
-	public function id()
+	public function id(): int
 	{
 		return $this->_id;
 	}
 
-	private function _setId(int $id)
+	private function _setId(int $id): void
 	{
 		$this->_id = $id; 
 	}
 
-	public static function getTableName() {
-		return static::$tablename;
-	}
-
-	public static function getFieldsMap() {
-		return self::$fields_map + static::$fields_map;
-	}
-
-	public function __construct(array $data = array())
+	public function __construct()
 	{
 		if(!static::$db)
 		{
 			static::$db = Database::connect();	
 		}
-		
-		if(count($data))
-		{
-			$this->input_fields = $data;
-		}
+
+		$this->isNew = true;
 	}
 
-	private static function getInstance(int $id)
-	{
+  public function __toString() {
+      return static::class;
+  }
+
+	private static function getInstance(int $id, array $loaded_data): static {
 		$model = new static();
+		if(!isset($model->data)) {
+			throw new \Exception("$model must initiate $data object in its constructor");
+		}
+
 		$model->isNew = false;
-		$model->_id = $id;
-		
+		$model->_setId($id);
+		$this->input_fields = $loaded_data;
+
 		return $model;
 	}
 
-	public function set(string $field, string $value)
-	{
+	public function set(string $field, string $value): static {
+		if(!array_key_exists($field, $this->data)) {
+			throw new \Exception("$field doesn't exist");
+		}
+
 		$this->input_fields[$field] = $value;
+		return $this;
 	}
 
 	public function get(string $field): array
 	{
-		return static::$db->select(static::getTableName(), $field)
+		if($value = $this->input_fields[$field] ?? null) {
+			return $value;
+		}
+
+		return static::$db->select($data->getTableName(), [$field])
 		->where(self::ID, $this->id())
 		->query();
 	}
@@ -74,13 +86,13 @@ abstract class Model
 	{
 		self::$db = Database::connect();
 
-		$loaded_id = self::$db->select(static::getTableName(), self::ID)
+		$loaded_data = self::$db->select($this->data->getTableName())
 		->where(self::ID, $id)
 		->query();
 
-		if($loaded_id)
+		if($loaded_data)
 		{
-			return static::getInstance($loaded_id);
+			return static::getInstance($id, $loaded_id);
 		}	
 	}
 
@@ -89,24 +101,29 @@ abstract class Model
 		if($this->isNew)
 		{
 			$this->isNew = false;
-			return static::$db->insert(static::getTableName(), $this->input_fields)->query();
+			return static::$db->insert($data->getTableName(), $this->input_fields)->query();
 		}
 		else
 		{
-			return static::$db->update(static::getTableName(), $this->input_fields)->query();
+			return static::$db->update($data->getTableName(), $this->input_fields)->query();
 		}
 	}
 
 	public function remove()
 	{
-		return static::$db->delete(static::getTableName())
+		return static::$db->delete($data->getTableName())
 		->where(self::ID, $this->id())
 		->query();
 	}
 
-	private function fields()
+	public
+	 function fields()
 	{
-		return static::$db->select(static::getTableName())
+		if(count($this->input_fields)) {
+			return $this->input_fields;
+		}
+
+		return static::$db->select($data->getTableName())
 		->where(self::ID, $this->id())
 		->query();
 	}

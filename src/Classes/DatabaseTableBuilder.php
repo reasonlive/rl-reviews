@@ -2,7 +2,7 @@
 
 namespace Reviews\Classes;
 
-class DatabaseTableConstructor extends Database {
+class DatabaseTableBuilder extends Database {
 
 	private static string|null $auto_column = null;
 	private static array $foreign_keys = array();
